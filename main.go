@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/mango/smart-copy/utils"
 )
 
 var useIgnore bool = false
@@ -16,7 +18,7 @@ func main() {
 	var path string = os.Args[1]
 	useIgnore = len(os.Args) > 2 && os.Args[2] == "--gitignore"
 
-	_, err := SmartCopy(path, useIgnore)
+	_, err := utils.SmartCopy(path, useIgnore)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
