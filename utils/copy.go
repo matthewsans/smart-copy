@@ -8,7 +8,11 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	clip "github.com/atotto/clipboard"
 )
+
+var currRoot string
 
 // walkAll just walks every file/dir under root, calling fn on each.
 func walkAll(root string, fn func(string, fs.DirEntry) error) error {
@@ -25,6 +29,7 @@ func walkAll(root string, fn func(string, fs.DirEntry) error) error {
 func walkWithGitIgnore(root string, fn func(string, fs.DirEntry) error) error {
 	m := New()
 	root = filepath.Clean(root)
+	currRoot = filepath.Clean(root)
 
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -69,14 +74,16 @@ func SmartCopy(root string, useIgnore bool) (string, error) {
 		return "", err
 	}
 	fmt.Println(buf.String())
+	clip.WriteAll(buf.String())
 	return "done", nil
 }
 
 func appendFile(buf *bytes.Buffer, path string) error {
+	rel, err := filepath.Rel(currRoot, path)
 	buf.WriteString("\n \n============================================== \n \n" +
 		"============================================== \n \n ")
 
-	buf.WriteString("// ---- " + filepath.Base(path) + " ----\n \n")
+	buf.WriteString("// ---- " + rel + " ----\n \n")
 	f, err := os.Open(path)
 	if err != nil {
 		return err
