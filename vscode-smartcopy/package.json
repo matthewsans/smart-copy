@@ -1,26 +1,68 @@
 {
   "name": "vscode-smartcopy",
   "displayName": "vscode-smartcopy",
-  "description": "Smart Copy is a VS Code extension that copies only the essential source code from a folder. Skipping compiled binaries, images, and .gitignore files. Ideal for clean code sharing, documentation, and pasting into LLMs like ChatGPT, Copilot, or Gemini without noisy boilerplate or clutter.",
+  "description": "Smart Copy is a VS Code extension...",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.100.0"
   },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [],
+  "categories": ["Other"],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
+  "submenus": [
+    {
+      "id": "vscode-smartcopy.submenu",
+      "label": "Smart Copy"
+    }
+  ],
+  "commands": [
+    {
+      "command": "vscode-smartcopy.runGitignoreList",
+      "title": "Gitignore List Only"
+    },
+    {
+      "command": "vscode-smartcopy.runAll",
+      "title": "All Files"
+    },
+    {
+      "command": "vscode-smartcopy.runGitignore",
+      "title": "Gitignore Only"
+    },
+    {
+      "command": "vscode-smartcopy.runMinimal",
+      "title": "Minimal/Optimal"
+    }
+  ],
+  "menus": {
+    "explorer/context": [
       {
-        "command": "vscode-smartcopy.helloWorld",
-        "title": "Hello World"
+        "submenu": "vscode-smartcopy.submenu",
+        "group": "navigation"
+      }
+    ],
+    "vscode-smartcopy.submenu": [
+      {
+        "command": "vscode-smartcopy.runGitignoreList",
+        "group": "1_modification"
+      },
+      {
+        "command": "vscode-smartcopy.runMinimal",
+        "group": "1_modification"
+      },
+      {
+        "command": "vscode-smartcopy.runGitignore",
+        "group": "1_modification"
+      },
+      {
+        "command": "vscode-smartcopy.runAll",
+        "group": "1_modification"
       }
     ]
-  },
+  }
+},
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "build-binary": "cd ../ && GOOS=darwin GOARCH=amd64 go build -o bin/mac/smartcopy . && GOOS=linux GOARCH=amd64 go build -o bin/linux/smartcopy . && GOOS=windows GOARCH=amd64 go build -o bin/win32/smartcopy.exe .",
+    "vscode:prepublish": "npm run compile && npm run build-binary",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",

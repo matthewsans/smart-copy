@@ -1,4 +1,3 @@
-// ── copy.go ──
 package utils
 
 import (
@@ -14,19 +13,20 @@ import (
 
 var currRoot string
 
-// walkAll just walks every file/dir under root, calling fn on each.
+// Walks every file/dir under root, calling fn on each.
 func walkAll(root string, fn func(string, fs.DirEntry) error) error {
+	currRoot = filepath.Clean(root)
+
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-
 		return fn(path, d)
 	})
 }
 
-// walkWithGitIgnore walks like WalkDir, but skips anything the Matcher says to ignore.
-func walkWithGitIgnore(root string, fn func(string, fs.DirEntry) error) error {
+// Skips paths based on .gitignore and optionally shouldKeep.
+func walkWithGitIgnore(root string, fn func(string, fs.DirEntry) error, useShouldKeep bool) error {
 	m := New()
 	root = filepath.Clean(root)
 	currRoot = filepath.Clean(root)
@@ -40,50 +40,74 @@ func walkWithGitIgnore(root string, fn func(string, fs.DirEntry) error) error {
 			return err
 		}
 
-		// skip ignored paths (but never skip the root itself)
-		if path != root && m.Ignored(path) || !shouldKeep(path, d) {
+		// Skip ignored paths (but never skip the root itself)
+		if path != root && m.Ignored(path) {
 			if d.IsDir() {
 				return fs.SkipDir
 			}
 			return nil
 		}
-		if d.IsDir() {
+
+		// Apply shouldKeep filter only if useShouldKeep is true
+		if useShouldKeep && !shouldKeep(path, d) {
+			if d.IsDir() {
+				return fs.SkipDir
+			}
 			return nil
 		}
-		return fn(path, d)
+
+		if d.IsDir() {
+			return nil // Continue walking into the directory
+		}
+		return fn(path, d) // Call fn for files
 	})
 }
 
-// SmartCopy either walks everything or honors .gitignore, printing each “kept” path.
-func SmartCopy(root string, useIgnore bool) (string, error) {
-	// define your “do work” callback here
+// SmartCopy handles copying based on the provided flags.
+func SmartCopy(root string, useGitignore bool, useShouldKeep bool, listOnly bool) (string, error) {
 	var buf bytes.Buffer
+
 	cb := func(path string, d fs.DirEntry) error {
-		appendFile(&buf, path)
-		fmt.Println("KEEP:", path)
+		rel, err := filepath.Rel(currRoot, path)
+		if err != nil {
+			rel = path
+		}
+
+		if listOnly {
+			buf.WriteString(rel + "\n")
+		} else {
+			appendFile(&buf, path)
+			fmt.Println("KEEP:", path)
+		}
 		return nil
 	}
 
 	var err error
-	if useIgnore {
-		err = walkWithGitIgnore(root, cb)
+	if useGitignore {
+		err = walkWithGitIgnore(root, cb, useShouldKeep)
 	} else {
 		err = walkAll(root, cb)
 	}
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(buf.String())
-	clip.WriteAll(buf.String())
+
+	fmt.Printf("DEBUG len(buf) = %d bytes\n", buf.Len())
+
+	if err := clip.WriteAll(buf.String()); err != nil { // 👈 capture error
+		fmt.Fprintf(os.Stderr, "CLIPBOARD-ERR: %v\n", err)
+		return "", err
+	}
+
 	return "done", nil
 }
 
 func appendFile(buf *bytes.Buffer, path string) error {
 	rel, err := filepath.Rel(currRoot, path)
-	buf.WriteString("\n \n============================================== \n \n" +
-		"============================================== \n \n ")
-
-	buf.WriteString("// ---- " + rel + " ----\n \n")
+	if err != nil {
+		rel = path
+	}
+	buf.WriteString("\n // ---- " + rel + " ----\n \n")
 	f, err := os.Open(path)
 	if err != nil {
 		return err

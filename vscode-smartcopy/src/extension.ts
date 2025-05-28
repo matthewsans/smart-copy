@@ -1,26 +1,65 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as cp from 'child_process';
+import * as path from 'path';
+import { spawn } from 'child_process';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  console.log('✅ vscode-smartcopy activated!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "vscode-smartcopy" is now active!');
+  // Helper to invoke the Go binary
+  function runSmartCopy(uri: vscode.Uri, mode: string) {
+    const goBinaryName = process.platform === 'win32'
+      ? 'smartcopy.exe'
+      : 'smartcopy';
+    const platformDir = process.platform === 'darwin'
+      ? 'mac'
+      : process.platform;
+    const binaryPath = path.join(
+      context.extensionPath, '..', 'bin', platformDir, goBinaryName
+    );
+    const args = [ uri.fsPath, '--mode', mode ];
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('vscode-smartcopy.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from vscode-smartcopy!');
-	});
+    const child = spawn(binaryPath, args, {
+      stdio: ['ignore', 'ignore', 'pipe'],   
+    });
 
-	context.subscriptions.push(disposable);
+    let stderr = '';
+    child.stderr.on('data', chunk => stderr += chunk);
+
+    child.on('close', code => {
+      if (code !== 0) {
+        vscode.window.showErrorMessage(`Smart Copy failed: ${stderr.trim()}`);
+      } else {
+        vscode.window.showInformationMessage(`✔ Smart Copy (${mode}) completed.`);
+      }
+    });
+  }
+
+  // Register one command per mode
+  const modes = [
+    { commandId: 'vscode-smartcopy.runMinimal',       mode: 'minimal'   },
+    { commandId: 'vscode-smartcopy.runGitignoreList', mode: 'gitignore-list'},
+    { commandId: 'vscode-smartcopy.runGitignore',     mode: 'gitignore' },
+    { commandId: 'vscode-smartcopy.runAll',           mode: 'all'       }
+
+
+  ];
+  for (const { commandId, mode } of modes) {
+    const disp = vscode.commands.registerCommand(commandId, (uri?: vscode.Uri) => {
+      if (!uri) {
+        const folders = vscode.workspace.workspaceFolders;
+        if (folders && folders.length > 0) {
+          uri = folders[0].uri; // fallback to workspace root
+        } else {
+          vscode.window.showErrorMessage('No folder selected and no workspace open.');
+          return;
+        }
+      }
+      runSmartCopy(uri, mode);
+    });
+
+    context.subscriptions.push(disp);
+  }
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}

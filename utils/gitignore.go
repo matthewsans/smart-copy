@@ -87,11 +87,9 @@ func shouldKeep(path string, d fs.DirEntry) bool {
 		return false
 	}
 
-	// keep READMEs & small docs
+	// throw READMEs & small docs
 	if enry.IsDocumentation(path) || enry.IsConfiguration(path) {
-		if info, _ := d.Info(); info.Size() <= maxSrc {
-			return true
-		}
+		return false
 	}
 
 	// keep real code
