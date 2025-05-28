@@ -3,6 +3,38 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import { spawn } from 'child_process';
 
+async function copyOpenEditors() {
+    const editors = vscode.workspace.textDocuments;
+    const wsFolders = vscode.workspace.workspaceFolders ?? [];
+    var count = 0;
+    let payload = '';
+
+    if (editors.length === 0) {
+      vscode.window.showInformationMessage('No open editors to copy.'); 
+      return;
+    }
+
+    for (const ed of editors) {
+      if  (ed.uri.scheme !== 'file' ||                            // skip virtual docs (git, gitlens, debug, etc.)
+          (ed.fileName.includes(`${path.sep}.git${path.sep}`)) ||  // skip .git internals
+          (ed.fileName.endsWith('.git'))) continue;
+
+      const headerPath = vscode.workspace.asRelativePath(ed.uri, false);
+      payload += `\n// ---- ${headerPath} ----\n\n`;
+      payload += ed.getText() + '\n';
+      count = count + 1;
+    }
+
+
+  
+    await vscode.env.clipboard.writeText(payload);
+    vscode.window.showInformationMessage(
+      `✔ Copied ${count} open editor(s) from ${wsFolders.length || 1} workspace folder(s).`
+    );
+          
+
+  }
+
 export function activate(context: vscode.ExtensionContext) {
   console.log('✅ vscode-smartcopy activated!');
 
@@ -35,7 +67,11 @@ export function activate(context: vscode.ExtensionContext) {
     });
   }
 
-  // Register one command per mode
+  //register Open Windows copy
+  const dispWin = vscode.commands.registerCommand('vscode-smartcopy.copyOpenEditors', 
+    copyOpenEditors
+  );
+  // Register one command per mode :: Uses GO Scripts
   const modes = [
     { commandId: 'vscode-smartcopy.runMinimal',       mode: 'minimal'   },
     { commandId: 'vscode-smartcopy.runGitignoreList', mode: 'gitignore-list'},

@@ -9,57 +9,81 @@
   "categories": ["Other"],
   "main": "./out/extension.js",
   "contributes": {
-  "submenus": [
+    "keybindings": [
     {
-      "id": "vscode-smartcopy.submenu",
-      "label": "Smart Copy"
+      "command": "vscode-smartcopy.copyOpenEditors",
+      "key": "ctrl+shift+c",
+      "when": "editorTextFocus"
     }
-  ],
-  "commands": [
-    {
-      "command": "vscode-smartcopy.runGitignoreList",
-      "title": "Gitignore List Only"
-    },
-    {
-      "command": "vscode-smartcopy.runAll",
-      "title": "All Files"
-    },
-    {
-      "command": "vscode-smartcopy.runGitignore",
-      "title": "Gitignore Only"
-    },
-    {
-      "command": "vscode-smartcopy.runMinimal",
-      "title": "Minimal/Optimal"
-    }
-  ],
-  "menus": {
-    "explorer/context": [
+    ],
+    "submenus": [
       {
-        "submenu": "vscode-smartcopy.submenu",
-        "group": "navigation"
+        "id": "vscode-smartcopy.submenu",
+        "label": "Smart Copy"
       }
     ],
-    "vscode-smartcopy.submenu": [
+    "commands": [
+      {
+        "command": "vscode-smartcopy.copyOpenEditors",
+        "title": "SmartCopy: Copy Open Editors"
+      },
       {
         "command": "vscode-smartcopy.runGitignoreList",
-        "group": "1_modification"
-      },
-      {
-        "command": "vscode-smartcopy.runMinimal",
-        "group": "1_modification"
-      },
-      {
-        "command": "vscode-smartcopy.runGitignore",
-        "group": "1_modification"
+        "title": "Gitignore List Only"
       },
       {
         "command": "vscode-smartcopy.runAll",
-        "group": "1_modification"
+        "title": "All Files"
+      },
+      {
+        "command": "vscode-smartcopy.runGitignore",
+        "title": "Gitignore Only"
+      },
+      {
+        "command": "vscode-smartcopy.runMinimal",
+        "title": "Minimal/Optimal"
       }
-    ]
-  }
-},
+    ],
+    "menus": {
+      "editor/title/context": [
+        {
+          "command": "vscode-smartcopy.copyOpenEditors",
+          "group": "navigation",
+          "when": "resourceLangId"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "vscode-smartcopy.copyOpenEditors",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "vscode-smartcopy.submenu",
+          "group": "navigation"
+        }
+      ],
+      "vscode-smartcopy.submenu": [
+        {
+          "command": "vscode-smartcopy.runGitignoreList",
+          "group": "1_modification"
+        },
+        {
+          "command": "vscode-smartcopy.runMinimal",
+          "group": "1_modification"
+        },
+        {
+          "command": "vscode-smartcopy.runGitignore",
+          "group": "1_modification"
+        },
+        {
+          "command": "vscode-smartcopy.runAll",
+          "group": "1_modification"
+        }
+      ]
+    }
+  },
   "scripts": {
     "build-binary": "cd ../ && GOOS=darwin GOARCH=amd64 go build -o bin/mac/smartcopy . && GOOS=linux GOARCH=amd64 go build -o bin/linux/smartcopy . && GOOS=windows GOARCH=amd64 go build -o bin/win32/smartcopy.exe .",
     "vscode:prepublish": "npm run compile && npm run build-binary",
