@@ -40,18 +40,15 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Helper to invoke the Go binary
   function runSmartCopy(uri: vscode.Uri, mode: string) {
-    const goBinaryName = process.platform === 'win32'
-      ? 'smartcopy.exe'
-      : 'smartcopy';
-    const platformDir = process.platform === 'darwin'
-      ? 'mac'
-      : process.platform;
-    const binaryPath = path.join(
-      context.extensionPath, '..', 'bin', platformDir, goBinaryName
-    );
+    const extRoot = context.extensionPath;               
+    const platform = process.platform === 'win32' ? 'windows' : process.platform;
+    const arch = process.arch; // 'arm64' | 'amd64' | …
+    const exeName = platform === 'windows' ? 'smartcopy.exe' : 'smartcopy';
+
+    const binaryPath = path.join(extRoot, 'bin', `${platform}-${arch}`, exeName);
     const args = [ uri.fsPath, '--mode', mode ];
 
-    const child = spawn(binaryPath, args, {
+    const child = spawn(binaryPath, args, {  // creates process to run go scripts
       stdio: ['ignore', 'ignore', 'pipe'],   
     });
 

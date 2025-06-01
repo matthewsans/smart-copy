@@ -85,8 +85,8 @@
     }
   },
   "scripts": {
-    "build-binary": "cd ../ && GOOS=darwin GOARCH=amd64 go build -o bin/mac/smartcopy . && GOOS=linux GOARCH=amd64 go build -o bin/linux/smartcopy . && GOOS=windows GOARCH=amd64 go build -o bin/win32/smartcopy.exe .",
-    "vscode:prepublish": "npm run compile && npm run build-binary",
+    "build:go": "node scripts/build-go.mts",
+    "vscode:prepublish": "npm run compile && npm run build:go",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
@@ -103,5 +103,13 @@
     "typescript": "^5.8.3",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matthewsans/smart-copy"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Matthew"
   }
 }
